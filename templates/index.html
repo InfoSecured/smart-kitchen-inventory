@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventory - Smart Kitchen Inventory</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Inventory</h1>
+        <a href="/wishlist">View Wishlist</a>
+        <a href="/pantry_suggestions">Get Recipe Suggestions</a>
+        <a href="/logout">Logout</a>
+        <ul>
+            {% for item in inventory %}
+                <li>{{ item.name }} - {{ item.quantity }} (Expires: {{ item.expiration_date }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

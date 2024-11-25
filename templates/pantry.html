@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Recipe Suggestions - Smart Kitchen Inventory</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Recipe Suggestions</h1>
+        <ul>
+            {% for recipe in suggestions %}
+                <li>
+                    <h2>{{ recipe.title }}</h2>
+                    <p>Ingredients Used: {{ recipe.usedIngredientCount }}</p>
+                    <p>Missing Ingredients: {{ recipe.missedIngredientCount }}</p>
+                    <img src="{{ recipe.image }}" alt="{{ recipe.title }}">
+                    <a href="https://spoonacular.com/recipes/{{ recipe.id }}" target="_blank">View Recipe</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

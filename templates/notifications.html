@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notifications - Smart Kitchen Inventory</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Notifications</h1>
+        <ul>
+            {% for notification in notifications %}
+                <li class="{{ 'read' if notification[2] else 'unread' }}">
+                    {{ notification[1] }} - {{ notification[3] }}
+                    {% if not notification[2] %}
+                        <form action="/mark_notification_read" method="POST">
+                            <input type="hidden" name="notification_id" value="{{ notification[0] }}">
+                            <button type="submit">Mark as Read</button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

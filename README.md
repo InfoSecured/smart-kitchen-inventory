@@ -30,6 +30,32 @@ Software
 
 Installation
 
+Before You Start
+
+Make sure to replace the placeholder values in the project files:
+	1.	YOUR_DOMAIN_OR_IP:
+	•	Replace this with your domain name (e.g., yourdomain.com) or the public IP address of your Raspberry Pi.
+	•	Found in:
+	•	installation.sh (Nginx configuration section).
+Example:
+
+server_name yourdomain.com;  # Replace with your domain or public IP
+
+
+	2.	your_spoonacular_api_key:
+	•	Obtain an API key from Spoonacular and replace the placeholder in utils/pantry_suggestions.py.
+Example:
+
+API_KEY = “your_actual_api_key”  # Replace this with your Spoonacular API key
+
+
+	3.	Optional: Amazon API:
+	•	If you plan to use Amazon Product Advertising API for reordering, configure it in the relevant part of app.py (not enabled by default).
+	4.	Firewall and Router Settings:
+	•	If hosting publicly, open ports 80 (HTTP) and 443 (HTTPS) on your firewall and router. For local testing, ensure port 5000 is accessible.
+
+Installation Steps
+
 	1.	Clone the Repository
 
 git clone https://github.com/YOUR_USERNAME/smart-kitchen-inventory.git
@@ -53,6 +79,17 @@ python3 app.py
 	•	Local Network: Open your browser and go to http://<Raspberry_Pi_IP>:5000.
 	•	Public Domain: Use your configured domain name (e.g., https://yourdomain.com).
 
+Testing the App
+
+	1.	Local Testing:
+	•	Start the app: python3 app.py.
+	•	Open http://<Raspberry_Pi_IP>:5000 in your browser.
+	•	Test user registration, login, adding inventory, and generating wishlists.
+	2.	Public Testing:
+	•	Ensure your domain points to your Raspberry Pi.
+	•	Open https://yourdomain.com in your browser.
+	•	Test HTTPS access and Nginx configuration.
+
 API Integrations
 
 	1.	Open Food Facts API
@@ -65,32 +102,63 @@ API Integrations
 	•	Enables item search and reordering on Amazon.
 	•	Documentation
 
-Usage
+Troubleshooting
 
-Inventory Management
+Common Issues
 
-	•	Log in to the app.
-	•	Navigate to the Inventory Dashboard.
-	•	Add items manually or use the Barcode Scanner.
+	1.	Nginx Errors
+	•	Run sudo nginx -t to test your configuration and restart Nginx:
 
-Wishlist
+sudo systemctl restart nginx
 
-	•	Navigate to Wishlist to track items you need to purchase.
-	•	Share your wishlist with friends or family using a unique URL.
 
-Recipe Suggestions
+	2.	Database Initialization Issues
+	•	If the databases aren’t initialized, run:
 
-	•	Click on Recipe Suggestions in the dashboard.
-	•	View personalized recipe ideas based on your current inventory.
+python3 -c “from utils.db import init_db; init_db()”
+python3 -c “from utils.barcode_cache import init_cache; init_cache()”
 
-Barcode Scanning
 
-	•	Use the scanner to add or remove items:
-	•	Add: Scan the barcode to populate details automatically.
-	•	Remove: Scan and confirm removal from the inventory.
+	3.	Firewall Blocking
+	•	Open required ports using ufw:
+
+sudo ufw allow 5000
+sudo ufw allow 80
+sudo ufw allow 443
 
 Screenshots
 
 Inventory Dashboard
 
-![Inventory Dashboard](https://via.placeholder.com/
+Recipe Suggestions
+
+Barcode Scanner
+
+Development
+
+Folder Structure
+
+smart-kitchen-inventory/
+├── app.py                  # Main application script
+├── requirements.txt        # Python dependencies
+├── installation.sh         # Installation script
+├── templates/              # HTML templates
+├── static/                 # Static files (CSS, JS, images)
+├── utils/                  # Utility modules
+├── README.md               # Documentation
+
+Contributing
+
+	1.	Fork the repository.
+	2.	Create a new branch for your feature (git checkout -b feature-name).
+	3.	Commit your changes (git commit -m “Add feature-name”).
+	4.	Push to your branch (git push origin feature-name).
+	5.	Create a pull request.
+
+License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+Support
+
+For questions or issues, feel free to open an issue in this repository.

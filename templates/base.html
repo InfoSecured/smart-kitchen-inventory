@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Kitchen Inventory{% endblock %}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background-color: #333;
+            color: white;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        .navbar .menu-icon {
+            display: none;
+            font-size: 24px;
+            padding: 14px;
+            cursor: pointer;
+        }
+        .navbar .menu-links {
+            display: flex;
+            justify-content: space-around;
+            padding: 14px 0;
+        }
+        .navbar .menu-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            text-align: center;
+        }
+        .navbar .menu-links a:hover {
+            background-color: #575757;
+            border-radius: 4px;
+        }
+
+        /* Mobile-Friendly Hamburger Menu */
+        @media (max-width: 600px) {
+            .navbar .menu-links {
+                display: none;
+                flex-direction: column;
+                background-color: #333;
+                width: 100%;
+                position: absolute;
+                top: 60px;
+                left: 0;
+            }
+            .navbar .menu-links.active {
+                display: flex;
+            }
+            .navbar .menu-icon {
+                display: block;
+            }
+        }
+
+        /* Page Content */
+        .content {
+            margin-top: 70px; /* Space for fixed navbar */
+            padding: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <span class="menu-icon" onclick="toggleMenu()">☰</span>
+        <div class="menu-links">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/add_item">Add Item</a>
+            <a href="/wishlist">Wishlist</a>
+            <a href="/pantry_suggestions">Pantry Suggestions</a>
+            <a href="/notifications">Notifications</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+
+    <!-- Page Content -->
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script>
+        // JavaScript to toggle menu visibility
+        function toggleMenu() {
+            const menuLinks = document.querySelector('.menu-links');
+            menuLinks.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

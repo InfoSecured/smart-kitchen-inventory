@@ -1,9 +1,14 @@
 import sqlite3
-from utils.notifications import create_notification
+import requests
 
+# Database file location
 DB_FILE = "kitchen_inventory.db"
 
+# Spoonacular API configuration
+SPOONACULAR_API_KEY = "INSERT API KEY HERE"  # Replace with your Spoonacular API key
+SPOONACULAR_API_URL = "https://api.spoonacular.com/recipes/findByIngredients"
 
+# ----- Database Initialization -----
 def init_db():
     """Initialize the database with required tables."""
     conn = sqlite3.connect(DB_FILE)
@@ -28,7 +33,7 @@ def init_db():
             name TEXT,
             quantity INTEGER,
             unit TEXT,
-            expiration_date TEXT,
+            expiration_date DATE NULL,
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
@@ -58,6 +63,13 @@ def init_db():
     conn.commit()
     conn.close()
 
+def get_db_connection():
+    """
+    Create and return a connection to the SQLite database.
+    """
+    conn = sqlite3.connect('inventory.db')  # Ensure the database file name is correct
+    conn.row_factory = sqlite3.Row  # Access rows as dictionaries
+    return conn
 
 # ----- Inventory Management -----
 def add_inventory_item(user_id, name, quantity, unit, expiration_date):
@@ -71,29 +83,38 @@ def add_inventory_item(user_id, name, quantity, unit, expiration_date):
     conn.commit()
     conn.close()
 
-
-def get_user_inventory(user_id):
-    """Retrieve all inventory items for a user."""
+def get_all_inventory():
+    """Retrieve all inventory items."""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute('''
         SELECT id, name, quantity, unit, expiration_date
         FROM inventory
-        WHERE user_id = ?
-    ''', (user_id,))
+    ''')
     inventory = c.fetchall()
     conn.close()
     return [{'id': row[0], 'name': row[1], 'quantity': row[2], 'unit': row[3], 'expiration_date': row[4]} for row in inventory]
 
+def get_inventory_item_by_id(item_id):
+    conn = get_db_connection()
+    query = "SELECT * FROM inventory WHERE id = ?"
+    print(f"Executing query: {query} with item_id={item_id}")
+    item = conn.execute(query, (item_id,)).fetchone()
+    conn.close()
+    print(f"Query result: {item}")
+    return item
 
-def remove_inventory_item(item_id):
-    """Remove an item from the inventory."""
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute('DELETE FROM inventory WHERE id = ?', (item_id,))
+def update_inventory_quantity(item_id, new_quantity):
+    conn = get_db_connection()
+    conn.execute("UPDATE inventory SET quantity = ? WHERE id = ?", (new_quantity, item_id))
     conn.commit()
     conn.close()
 
+def remove_inventory_item(item_id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM inventory WHERE id = ?", (item_id,))
+    conn.commit()
+    conn.close()
 
 # ----- Wishlist Management -----
 def add_wish_list_item(user_id, item_name):
@@ -107,7 +128,6 @@ def add_wish_list_item(user_id, item_name):
     conn.commit()
     conn.close()
 
-
 def get_user_wishlist(user_id):
     """Retrieve all wishlist items for a user."""
     conn = sqlite3.connect(DB_FILE)
@@ -120,7 +140,6 @@ def get_user_wishlist(user_id):
     wishlist = c.fetchall()
     conn.close()
     return [{'id': row[0], 'item_name': row[1]} for row in wishlist]
-
 
 # ----- Notifications -----
 def check_inventory_notifications(user_id):
@@ -154,3 +173,80 @@ def check_inventory_notifications(user_id):
         create_notification(user_id, message)
 
     conn.close()
+
+def create_notification(user_id, message):
+    """Create a new notification for a user."""
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    try:
+        c.execute('''
+            INSERT INTO notifications (user_id, message, is_read)
+            VALUES (?, ?, 0)
+        ''', (user_id, message))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error creating notification: {e}")
+    finally:
+        conn.close()
+
+def get_notifications(user_id):
+    """Retrieve all notifications for a user."""
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''
+        SELECT id, message, is_read, created_at
+        FROM notifications
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+    ''', (user_id,))
+    notifications = c.fetchall()
+    conn.close()
+
+    # Convert the result into a list of dictionaries
+    return [
+        {
+            'id': row[0],
+            'message': row[1],
+            'is_read': bool(row[2]),
+            'created_at': row[3]
+        }
+        for row in notifications
+    ]
+
+def mark_as_read(notification_id):
+    """Mark a notification as read."""
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''
+        UPDATE notifications
+        SET is_read = 1
+        WHERE id = ?
+    ''', (notification_id,))
+    conn.commit()
+    conn.close()
+
+# ----- Recipe Suggestions -----
+def get_recipe_suggestions(inventory):
+    """
+    Fetch recipe suggestions from Spoonacular API based on inventory.
+
+    :param inventory: A list of inventory items (dictionaries)
+    :return: A list of recipe suggestions
+    """
+    ingredients = [item['name'] for item in inventory]
+
+    params = {
+        'ingredients': ','.join(ingredients),
+        'number': 5,  # Number of recipes to fetch
+        'apiKey': SPOONACULAR_API_KEY
+    }
+
+    try:
+        response = requests.get(SPOONACULAR_API_URL, params=params)
+        response.raise_for_status()
+        recipes = response.json()
+        return recipes
+
+    except requests.RequestException as e:
+        print(f"Error fetching recipes: {e}")
+        return []

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Smart Kitchen Inventory{% endblock %}
+
+{% block content %}
+<h2>Inventory</h2>
+
+<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+    <thead>
+        <tr>
+            <th style="border: 1px solid #ddd; padding: 10px;">Name</th>
+            <th style="border: 1px solid #ddd; padding: 10px;">Quantity</th>
+            <th style="border: 1px solid #ddd; padding: 10px;">Unit</th>
+            <th style="border: 1px solid #ddd; padding: 10px;">Expiration Date</th>
+            <th style="border: 1px solid #ddd; padding: 10px;">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in inventory %}
+        <tr>
+            <td style="border: 1px solid #ddd; padding: 10px;">{{ item['name'] }}</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">{{ item['quantity'] }}</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">{{ item['unit'] }}</td>
+            <td style="border: 1px solid #ddd; padding: 10px;">{{ item['expiration_date'] or 'None' }}</td>
+            <td style="border: 1px solid #ddd; padding: 10px; text-align: center;">
+                <!-- Remove 1 Button -->
+                <form action="/update_inventory/{{ item['id'] }}" method="POST" style="display: inline;">
+                    <input type="hidden" name="action" value="decrease">
+                    <button type="submit" style="background-color: #ffc107; color: black; border: none; padding: 5px 10px; cursor: pointer;">
+                        Remove 1
+                    </button>
+                </form>
+                <!-- Remove All Button -->
+                <form action="/update_inventory/{{ item['id'] }}" method="POST" style="display: inline;">
+                    <input type="hidden" name="action" value="remove_all">
+                    <button type="submit" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer;">
+                        Remove All
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Message for Empty Inventory -->
+{% if inventory|length == 0 %}
+<p style="text-align: center; margin-top: 20px;">No items in the inventory.</p>
+{% endif %}
+{% endblock %}

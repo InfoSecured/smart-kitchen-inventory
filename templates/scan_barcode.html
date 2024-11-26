@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Barcode - Smart Kitchen Inventory{% endblock %}
+
+{% block content %}
+<h2>Scan Barcode</h2>
+<div id="barcode-scanner" style="width: 100%; max-width: 500px; height: 300px; border: 1px solid #ccc; margin: auto;"></div>
+<p><strong>Scanned Barcode:</strong> <span id="barcodeResult">None</span></p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<script>
+    let isProcessing = false; // Flag to prevent multiple detections
+
+    Quagga.init({
+        inputStream: {
+            name: "Live",
+            type: "LiveStream",
+            target: document.querySelector('#barcode-scanner'),
+            constraints: {
+                facingMode: "environment" // Use the back camera
+            }
+        },
+        decoder: {
+            readers: [
+                "ean_reader",      // For EAN-13 barcodes
+                "upc_reader",      // For UPC-A barcodes
+                "upc_e_reader"     // For UPC-E barcodes (compressed UPC)
+            ]
+        }
+    }, function(err) {
+        if (err) {
+            console.error(err);
+            alert("Error initializing the barcode scanner. Please try again.");
+            return;
+        }
+        Quagga.start();
+    });
+
+    Quagga.onDetected(function(data) {
+        if (isProcessing) return; // Ignore subsequent detections
+        isProcessing = true; // Set flag to prevent further processing
+
+        const barcode = data.codeResult.code;
+        document.getElementById('barcodeResult').innerText = barcode;
+
+        // Perform a lookup for the barcode
+        fetch(`/lookup_barcode?barcode=${barcode}`)
+            .then(response => response.json())
+            .then(product => {
+                if (product.name) {
+                    location.href = `/add_item?barcode=${barcode}&name=${encodeURIComponent(product.name)}`;
+                } else {
+                    alert("Product not found. You can manually enter the details.");
+                    isProcessing = false; // Reset flag for retry
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching product info:", error);
+                alert("Error looking up the barcode. Redirecting to manual entry.");
+                isProcessing = false; // Reset flag for retry
+            });
+    });
+</script>
+{% endblock %}

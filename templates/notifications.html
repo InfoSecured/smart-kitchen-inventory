@@ -1,25 +1,26 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Notifications - Smart Kitchen Inventory</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <div class="container">
-        <h1>Notifications</h1>
-        <ul>
-            {% for notification in notifications %}
-                <li class="{{ 'read' if notification[2] else 'unread' }}">
-                    {{ notification[1] }} - {{ notification[3] }}
-                    {% if not notification[2] %}
-                        <form action="/mark_notification_read" method="POST">
-                            <input type="hidden" name="notification_id" value="{{ notification[0] }}">
-                            <button type="submit">Mark as Read</button>
-                        </form>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Notifications - Smart Kitchen Inventory{% endblock %}
+
+{% block content %}
+<h2>Notifications</h2>
+{% if notifications %}
+    <ul>
+        {% for notification in notifications %}
+        <li style="margin-bottom: 10px;">
+            <strong>{{ notification.message }}</strong>
+            <br>
+            <small>{{ notification.created_at }}</small>
+            {% if not notification.is_read %}
+                <form action="/mark_notification_read" method="POST" style="display: inline;">
+                    <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                    <button type="submit">Mark as Read</button>
+                </form>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No notifications found.</p>
+{% endif %}
+{% endblock %}

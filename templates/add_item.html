@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Add Item - Smart Kitchen Inventory{% endblock %}
+
+{% block content %}
+<h2>Add Item</h2>
+
+<!-- Barcode Scanning Option -->
+<div style="margin-bottom: 20px;">
+    <button id="scanBarcodeButton" onclick="showBarcodeScanner()" style="width: 100%; padding: 15px; font-size: 16px; background-color: #007bff; color: white; border: none; cursor: pointer;">
+        Scan Barcode
+    </button>
+</div>
+
+<!-- Barcode Scanner Section -->
+<div id="barcodeScanner" style="display: none; margin-bottom: 20px;">
+    <h3>Scan Barcode</h3>
+    <div id="barcode-scanner" style="width: 100%; max-width: 500px; height: 300px; border: 1px solid #ccc; margin: auto;"></div>
+    <p><strong>Scanned Barcode:</strong> <span id="barcodeResult">None</span></p>
+    <button onclick="hideBarcodeScanner()" style="width: 100%; padding: 15px; font-size: 16px; background-color: #6c757d; color: white; border: none; cursor: pointer;">
+        Cancel Scanning
+    </button>
+</div>
+
+<!-- Manual Add Option -->
+<div id="manualEntryForm" style="display: block;">
+    <form action="/add_inventory" method="POST" style="max-width: 500px; margin: auto;">
+        <label for="name">Item Name:</label>
+        <input type="text" id="name" name="name" placeholder="Item Name" required value="{{ request.args.get('name', '') }}" style="width: 100%; padding: 10px; margin: 10px 0;">
+
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="quantity" placeholder="Quantity" required style="width: 100%; padding: 10px; margin: 10px 0;">
+
+        <label for="unit">Unit:</label>
+        <input type="text" id="unit" name="unit" placeholder="Unit (e.g., kg, bags)" required style="width: 100%; padding: 10px; margin: 10px 0;">
+
+        <label for="expiration_date">Expiration Date:</label>
+        <input type="date" id="expiration_date" name="expiration_date" placeholder="Expiration Date" style="width: 100%; padding: 10px; margin: 10px 0;">
+
+        <button type="submit" style="width: 100%; padding: 15px; font-size: 16px; background-color: #28a745; color: white; border: none; cursor: pointer;">
+            Add Manually
+        </button>
+    </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<script>
+    let isProcessing = false;
+
+    // Show the barcode scanner and hide the manual entry form
+    function showBarcodeScanner() {
+        document.getElementById('barcodeScanner').style.display = 'block';
+        document.getElementById('manualEntryForm').style.display = 'none';
+        startBarcodeScanner();
+    }
+
+    // Hide the barcode scanner and show the manual entry form
+    function hideBarcodeScanner() {
+        document.getElementById('barcodeScanner').style.display = 'none';
+        document.getElementById('manualEntryForm').style.display = 'block';
+        Quagga.stop(); // Stop the barcode scanner
+    }
+
+    // Start the barcode scanner using QuaggaJS
+    function startBarcodeScanner() {
+        Quagga.init({
+            inputStream: {
+                name: "Live",
+                type: "LiveStream",
+                target: document.querySelector('#barcode-scanner'),
+                constraints: {
+                    facingMode: "environment" // Use the back camera
+                }
+            },
+            decoder: {
+                readers: [
+                    "ean_reader",      // For EAN-13 barcodes
+                    "upc_reader",      // For UPC-A barcodes
+                    "upc_e_reader"     // For UPC-E barcodes (compressed UPC)
+                ]
+            }
+        }, function(err) {
+            if (err) {
+                console.error(err);
+                alert("Error initializing the barcode scanner. Please try again.");
+                return;
+            }
+            Quagga.start();
+        });
+
+        Quagga.onDetected(function(data) {
+            if (isProcessing) return; // Prevent multiple detections
+            isProcessing = true;
+
+            const barcode = data.codeResult.code;
+            document.getElementById('barcodeResult').innerText = barcode;
+
+            // Perform barcode lookup
+            fetch(`/lookup_barcode?barcode=${barcode}`)
+                .then(response => {
+                    if (!response.ok) {
+                        alert("Product not found. You can manually enter the details.");
+                        throw new Error("Product not found");
+                    }
+                    return response.json();
+                })
+                .then(product => {
+                    // Autofill the manual form with product details
+                    hideBarcodeScanner();
+                    document.getElementById('name').value = product.name || '';
+                    document.getElementById('quantity').value = 1; // Default quantity
+                    document.getElementById('unit').value = product.unit || 'Unit'; // Default unit
+                })
+                .catch(error => {
+                    console.error("Error during product lookup:", error);
+                    hideBarcodeScanner();
+                })
+                .finally(() => {
+                    isProcessing = false;
+                });
+        });
+    }
+</script>
+{% endblock %}
